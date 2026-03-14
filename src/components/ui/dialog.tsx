@@ -18,7 +18,7 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
                 onClick={() => onOpenChange?.(false)}
             />
             {/* Modal Content container */}
-            <div className="relative z-50 w-full max-w-lg">
+            <div className="relative z-50 w-full">
                 {React.Children.map(children, child => {
                     if (React.isValidElement(child)) {
                         return React.cloneElement(child as React.ReactElement<any>, { onOpenChange })
@@ -30,14 +30,16 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
     )
 }
 
-export function DialogContent({ children, className }: any) {
+export function DialogContent({ children, className, style }: any) {
     return (
-        <div className={cn(
-            "bg-surface border border-border shadow-lg rounded-lg p-6 w-full animate-in fade-in zoom-in-95 duration-200",
-            className
-        )}>
+        <div
+            className={cn(
+                "bg-surface border mx-auto border-border shadow-lg rounded-lg p-6 animate-in fade-in zoom-in-95 duration-200",
+                className
+            )}
+            style={style}
+        >
             {children}
-            {/* Invisible close button for accessibility/escape hatch if needed, but usually handled by buttons inside */}
         </div>
     )
 }

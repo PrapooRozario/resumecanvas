@@ -21,12 +21,9 @@ export function ExportModal({ open, onOpenChange, onExport, isExporting }: Expor
     // For now we'll just prepopulate using user name or 'my-resume'
     useEffect(() => {
         if (open) {
-            const defaultName = user?.user_metadata?.username
-                ? `${user.user_metadata.username}-resume`
+            const defaultName = user?.user_metadata?.name
+                ? `${(user.user_metadata.name).toLowerCase().replace(/[^a-z0-9_-]/g, '-')}-resume`
                 : 'my-resume'
-            // We should ideally read resumes.meta.lastExportName here if available,
-            // but for simplicity we rely on the parent logic if we pass it down, 
-            // or just set a good default.
             setFilename(defaultName)
             setError(null)
         }

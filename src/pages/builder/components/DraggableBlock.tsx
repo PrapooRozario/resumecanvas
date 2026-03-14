@@ -98,8 +98,8 @@ export function DraggableBlock({ block, overrideRender }: DraggableBlockProps) {
             </div>
 
             {/* Delete Confirmation Dialog */}
-            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                <DialogContent>
+            <Dialog open={isDeleteDialogOpen}  onOpenChange={setIsDeleteDialogOpen}>
+                <DialogContent className="w-fit">
                     <DialogHeader>
                         <DialogTitle>Delete Block</DialogTitle>
                         <DialogDescription>
