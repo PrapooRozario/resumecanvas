@@ -5,6 +5,7 @@ import { AuthLayout } from '@/components/layout/AuthLayout'
 import { LandingPage } from '@/pages/landing/LandingPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
+import { AuthCallback } from '@/pages/auth/AuthCallback'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { DashboardPage } from '@/pages/dashboard/DashboardPage'
 import { BuilderPage } from '@/pages/builder/BuilderPage'
@@ -19,6 +20,9 @@ export default function App() {
           <Route path="/register" element={<RegisterPage />} />
         </Route>
 
+        {/* OAuth Callback — must be outside ProtectedRoute and AuthLayout */}
+        <Route path="/auth/callback" element={<AuthCallback />} />
+
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
@@ -29,7 +33,6 @@ export default function App() {
         <Route path="/" element={<LandingPage />} />
 
         {/* Fallback 404 */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
       <Toaster
