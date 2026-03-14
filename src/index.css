@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #0a0a0a;
+    --surface: #111111;
+    --surface-2: #1a1a1a;
+    --surface-3: #242424;
+    --border: #2a2a2a;
+    --text-primary: #f5f5f5;
+    --text-secondary: #888888;
+    --text-muted: #555555;
+    --accent: #e8e8e8;
+    --destructive: #ff4444;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --canvas-bg: #f5f5f5;
+  }
+
+  .light-resume {
+    --resume-bg: #ffffff;
+    --resume-text: #171717;
+    --resume-text-secondary: #525252;
+    --resume-muted: #a3a3a3;
+    --resume-border: rgba(23,23,23,0.1);
+    --resume-surface: rgba(23,23,23,0.03);
+  }
+
+  .dark-resume {
+    --resume-bg: #0f0f0f;
+    --resume-text: #f5f5f5;
+    --resume-text-secondary: #a3a3a3;
+    --resume-muted: #737373;
+    --resume-border: rgba(245,245,245,0.15);
+    --resume-surface: rgba(245,245,245,0.05);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--text-primary);
+    font-family: 'Geist', sans-serif;
+  }
+
+  /* Minimalist Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #222;
+    border-radius: 8px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #333;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #222 transparent;
+  }
+
+  /* Reset default focus ring and use custom */
+  *:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+
+  * {
+    transition-property: color, background-color, border-color, opacity, box-shadow;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+}
+
+@keyframes border-pulse {
+  0%, 100% { border-color: var(--border); opacity: 0.5; }
+  50% { border-color: var(--accent); opacity: 1; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+@layer utilities {
+  .animate-border-pulse {
+    animation: border-pulse 2.5s ease-in-out infinite;
+  }
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+}
