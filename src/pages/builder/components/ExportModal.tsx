@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { useBuilderStore } from '@/store/useBuilderStore'
+
 import { useAuthStore } from '@/store/useAuthStore'
-import { supabase } from '@/lib/supabase'
+
 
 interface ExportModalProps {
     open: boolean
@@ -14,7 +14,6 @@ interface ExportModalProps {
 
 export function ExportModal({ open, onOpenChange, onExport, isExporting }: ExportModalProps) {
     const { user } = useAuthStore()
-    const { title } = useBuilderStore()
     const [filename, setFilename] = useState('')
     const [error, setError] = useState<string | null>(null)
 
