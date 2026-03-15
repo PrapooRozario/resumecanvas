@@ -88,6 +88,6 @@ export function DropdownMenuItem({ children, onClick, className }: any) {
     )
 }
 
-export function DropdownMenuSeparator() {
-    return <div className="h-[1px] w-full bg-border my-1" />
+export function DropdownMenuSeparator({ className }: { className?: string }) {
+    return <div className={cn("h-[1px] w-full bg-border my-1", className)} />
 }

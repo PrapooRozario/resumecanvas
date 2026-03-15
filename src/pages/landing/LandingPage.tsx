@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowRight, FileDown, Sun, Moon } from 'lucide-react'
@@ -50,7 +49,7 @@ export function LandingPage() {
 
             {/* Navbar */}
             <header className="fixed top-0 inset-x-0 z-50 bg-transparent h-[56px] md:h-[64px] flex items-center">
-                <div className="w-full max-w-[960px] mx-auto px-5 md:px-8 flex items-center justify-between">
+                <div className="w-full mx-auto px-5 md:px-8 flex items-center justify-between">
                     <Link to="/" className="font-serif italic text-[18px] font-[400] text-[#f5f5f5] hover:opacity-70 transition-opacity duration-200">
                         ResumeCanvas
                     </Link>
