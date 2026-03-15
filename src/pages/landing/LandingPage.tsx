@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight, Move, FileDown, Layout, Sun, Save, Lock, Menu, X } from 'lucide-react'
+import { ArrowRight, FileDown, Sun, Moon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useProfile } from '@/hooks/queries/useProfile'
@@ -38,9 +38,6 @@ export function LandingPage() {
     const { user, isLoading: authLoading, signOut } = useAuthStore()
     const { data: profile, isLoading: profileLoading } = useProfile(user?.id)
 
-    const [scrolled, setScrolled] = useState(false)
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-
     const showLoading = authLoading || (user && profileLoading)
     
     const handleSignOut = async () => {
@@ -48,57 +45,44 @@ export function LandingPage() {
         navigate('/')
     }
 
-    useEffect(() => {
-        const handleScroll = () => {
-            setScrolled(window.scrollY > 80)
-        }
-        window.addEventListener('scroll', handleScroll)
-        return () => window.removeEventListener('scroll', handleScroll)
-    }, [])
-
     return (
         <div className="min-h-screen bg-background text-text-primary selection:bg-accent/20 overflow-x-hidden">
 
             {/* Navbar */}
-            <header
-                className={`fixed top-0 inset-x-0 z-50 transition-all duration-300  ${scrolled ? 'bg-surface/80 backdrop-blur-sm border-border py-4' : 'bg-transparent border-transparent py-4 md:py-6'
-                    }`}
-            >
-                <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
-                    <div className="font-serif italic text-2xl tracking-tight pr-4">ResumeCanvas</div>
+            <header className="fixed top-0 inset-x-0 z-50 bg-transparent h-[56px] md:h-[64px] flex items-center">
+                <div className="w-full max-w-[960px] mx-auto px-5 md:px-8 flex items-center justify-between">
+                    <Link to="/" className="font-serif italic text-[18px] font-[400] text-[#f5f5f5] hover:opacity-70 transition-opacity duration-200">
+                        ResumeCanvas
+                    </Link>
 
-                    {/* Desktop Nav */}
-                    <div className="hidden md:flex items-center gap-4">
+                    <div className="flex items-center gap-2">
                         {showLoading ? (
-                            <>
-                                <div className="w-20 h-8 bg-surface-2 animate-pulse rounded-md" />
-                                <div className="w-8 h-8 rounded-full bg-surface-2 animate-pulse" />
-                            </>
+                            <div className="w-[84px] h-[34px] bg-[#1a1a1a] animate-pulse rounded-full" />
                         ) : user ? (
                             <>
-                                <Button asChild variant="ghost" size="sm" className="text-text-muted hover:text-text-primary transition-colors">
-                                    <Link to="/dashboard">Dashboard</Link>
-                                </Button>
+                                <Link to="/dashboard" className="hidden md:block text-[13px] text-[#888888] hover:text-[#f5f5f5] transition-colors duration-150 px-2 py-1">
+                                    Dashboard
+                                </Link>
                                 <DropdownMenu>
-                                    <DropdownMenuTrigger className="focus:outline-none focus:ring-2 focus:ring-accent rounded-full">
-                                        <Avatar className="w-8 h-8 cursor-pointer ring-1 ring-border hover:ring-accent transition-all">
-                                            {profile?.avatar_url && <AvatarImage src={profile.avatar_url} />}
-                                            <AvatarFallback className="bg-surface-2 text-text-primary text-xs">
-                                                {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase() || 'U'}
+                                    <DropdownMenuTrigger className="focus:outline-none rounded-full ml-1">
+                                        <Avatar className="w-8 h-8 rounded-full cursor-pointer hover:opacity-80 transition-opacity duration-150 ui-state-open:ring-2 ui-state-open:ring-[#f5f5f5] ui-state-open:ring-offset-2 ui-state-open:ring-offset-transparent">
+                                            {profile?.avatar_url && <AvatarImage src={profile.avatar_url} className="object-cover" />}
+                                            <AvatarFallback className="bg-[#1a1a1a] border border-[#2a2a2a] text-[#888888] text-[12px] uppercase">
+                                                {profile?.full_name ? profile.full_name.charAt(0) : user.email?.charAt(0) || 'U'}
                                             </AvatarFallback>
                                         </Avatar>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="right" className="w-48">
-                                        <div className="px-4 py-2 flex flex-col gap-0.5 pointer-events-none">
-                                            <p className="text-sm text-text-primary/70">{profile?.full_name || 'User'}</p>
-                                            <p className="text-[12px] text-text-muted">@{profile?.username || user.email?.split('@')[0]}</p>
+                                    <DropdownMenuContent align="right" sideOffset={8} className="bg-[#111111] border border-[#1f1f1f] rounded-[10px] p-1.5 min-w-[180px] shadow-xl">
+                                        <div className="px-2.5 py-2 flex flex-col pointer-events-none">
+                                            <p className="text-[13px] text-[#f5f5f5] font-medium">{profile?.full_name || 'User'}</p>
+                                            <p className="text-[12px] text-[#555555]">@{profile?.username || user.email?.split('@')[0]}</p>
                                         </div>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={() => navigate('/dashboard')} className="cursor-pointer flex items-center">
+                                        <DropdownMenuSeparator className="bg-[#1f1f1f] my-1" />
+                                        <DropdownMenuItem onClick={() => navigate('/dashboard')} className="cursor-pointer text-[13px] text-[#888888] hover:text-[#f5f5f5] hover:bg-[#1a1a1a] focus:bg-[#1a1a1a] focus:text-[#f5f5f5] rounded-[6px] px-2.5 py-2 transition-colors duration-100">
                                             Dashboard
                                         </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer flex items-center text-text-secondary hover:text-destructive">
+                                        <DropdownMenuSeparator className="bg-[#1f1f1f] my-1" />
+                                        <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-[13px] text-[#888888] hover:text-[#ff4444] hover:bg-[#1a1a1a] focus:bg-[#1a1a1a] focus:text-[#ff4444] rounded-[6px] px-2.5 py-2 transition-colors duration-100">
                                             Sign out
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
@@ -106,37 +90,17 @@ export function LandingPage() {
                             </>
                         ) : (
                             <>
-                                <Link to="/login" className="text-sm font-medium text-text-muted hover:text-text-primary transition-colors">
+                                <Link to="/login" className="hidden md:block text-[13px] text-[#888888] hover:text-[#f5f5f5] transition-colors duration-150 px-2 py-1">
                                     Sign in
                                 </Link>
-                                <Button asChild size="sm" className="bg-text-primary text-background hover:bg-text-secondary rounded-full px-5">
-                                    <Link to="/register">Get started</Link>
-                                </Button>
+                                <Link to="/register" className="bg-[#f5f5f5] text-[#0a0a0a] text-[13px] font-medium px-[18px] py-2 rounded-full hover:bg-white hover:scale-[1.02] active:scale-[0.98] transition-all duration-150 ml-1">
+                                    Get started
+                                </Link>
                             </>
                         )}
                     </div>
-
-                    {/* Mobile Menu Toggle */}
-                    <button
-                        className="md:hidden p-2 -mr-2 text-text-muted hover:text-text-primary transition-colors"
-                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    >
-                        {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-                    </button>
                 </div>
             </header>
-
-            {/* Mobile Nav Drawer */}
-            {mobileMenuOpen && (
-                <div className="fixed inset-0 z-40 bg-surface/95 backdrop-blur-xl pt-24 px-6 md:hidden flex flex-col items-center gap-6 animate-in fade-in zoom-in-95 duration-200">
-                    <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="text-lg font-medium text-text-secondary hover:text-text-primary transition-colors">
-                        Sign in
-                    </Link>
-                    <Button asChild size="lg" className="w-full bg-text-primary text-background hover:bg-text-secondary rounded-full">
-                        <Link to="/register" onClick={() => setMobileMenuOpen(false)}>Get started for free</Link>
-                    </Button>
-                </div>
-            )}
 
             {/* Hero Section */}
             <section className="relative pt-32 pb-16 md:pt-52 md:pb-32 px-6">
@@ -203,76 +167,136 @@ export function LandingPage() {
 
             {/* Features Section */}
             <section className="py-24 md:py-32 px-6 bg-background">
-                <div className="max-w-6xl mx-auto">
+                <div className="max-w-[960px] mx-auto">
                     <motion.div
                         initial="hidden"
                         whileInView="visible"
                         viewport={{ once: true, margin: "-100px" }}
                         variants={staggerContainer}
-                        className="text-center mb-16"
+                        className="text-center mb-12"
                     >
-                        <motion.p variants={fadeInUp} className="text-sm font-semibold tracking-widest text-text-muted uppercase mb-3">
-                            Features
+                        <motion.p variants={fadeInUp} className="text-[11px] font-semibold tracking-[0.15em] text-[#555555] uppercase mb-4">
+                            FEATURES
                         </motion.p>
-                        <motion.h2 variants={fadeInUp} className="font-serif text-3xl md:text-5xl text-text-primary">
-                            Everything you need. Nothing you don't.
+                        <motion.h2 variants={fadeInUp} className="font-serif text-[28px] md:text-[40px] text-[#f5f5f5] mb-4">
+                            Everything you need.
                         </motion.h2>
+                        <motion.p variants={fadeInUp} className="text-[15px] text-[#888888] max-w-lg mx-auto">
+                            One focused tool, built to make your resume stand out.
+                        </motion.p>
                     </motion.div>
 
                     <motion.div
                         initial="hidden"
                         whileInView="visible"
                         viewport={{ once: true, margin: "-100px" }}
-                        variants={staggerContainer}
-                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+                        className="grid grid-cols-1 md:grid-cols-2 gap-4"
                     >
-                        {/* 1 */}
-                        <motion.div variants={fadeInUp} className="bg-surface border border-border rounded-2xl p-6 md:p-8 flex flex-col">
-                            <div className="w-12 h-12 bg-surface-2 rounded-xl flex items-center justify-center mb-6">
-                                <Move className="w-6 h-6 text-text-primary" />
+                        {/* CARD 1 - Drag & Drop */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 24 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, margin: "-50px" }}
+                            transition={{ duration: 0.4, delay: 0 }}
+                            className="bg-[#0f0f0f] border border-[#1f1f1f] rounded-[16px] flex flex-col overflow-hidden group hover:border-[#2a2a2a] hover:scale-[1.01] transition-all duration-200"
+                        >
+                            <div className="h-[220px] bg-[#111111] relative flex items-center justify-center p-6 border-b border-[#1a1a1a]">
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <div className="w-[120px] h-[120px] bg-white opacity-[0.15] blur-[60px] rounded-full" />
+                                </div>
+                                <div className="z-10 w-full max-w-[160px] flex flex-col gap-2.5 relative">
+                                    <div className="h-6 w-full bg-white/[0.25] rounded-md animate-slide-up-fade" style={{ animationDelay: '0s' }} />
+                                    <div className="h-6 w-[70%] bg-white/[0.20] rounded-md animate-slide-up-fade" style={{ animationDelay: '0.1s' }} />
+                                    <div className="h-6 w-[50%] bg-white/[0.15] rounded-md animate-slide-up-fade" style={{ animationDelay: '0.2s' }} />
+                                </div>
                             </div>
-                            <h3 className="text-xl font-medium mb-2 text-text-primary">Drag & Drop Builder</h3>
-                            <p className="text-text-muted text-base flex-1">Arrange your resume sections with intuitive drag and drop. No manual formatting required.</p>
+                            <div className="bg-[#0f0f0f] p-6 flex flex-col justify-center flex-1">
+                                <h3 className="font-serif text-[20px] text-[#f5f5f5] mb-2">Drag & Drop Builder</h3>
+                                <p className="text-[13px] text-[#888888] leading-[1.6]">Arrange your resume sections effortlessly. No code, no complexity.</p>
+                            </div>
                         </motion.div>
-                        {/* 2 */}
-                        <motion.div variants={fadeInUp} className="bg-surface border border-border rounded-2xl p-6 md:p-8 flex flex-col">
-                            <div className="w-12 h-12 bg-surface-2 rounded-xl flex items-center justify-center mb-6">
-                                <FileDown className="w-6 h-6 text-text-primary" />
+
+                        {/* CARD 2 - Export as PDF */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 24 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, margin: "-50px" }}
+                            transition={{ duration: 0.4, delay: 0.1 }}
+                            className="bg-[#0f0f0f] border border-[#1f1f1f] rounded-[16px] flex flex-col overflow-hidden group hover:border-[#2a2a2a] hover:scale-[1.01] transition-all duration-200"
+                        >
+                            <div className="h-[220px] bg-[#111111] relative flex flex-col items-center justify-center border-b border-[#1a1a1a]">
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <div className="w-[120px] h-[120px] bg-white opacity-[0.15] blur-[60px] rounded-full" />
+                                </div>
+                                <div className="z-10 relative flex flex-col items-center justify-center">
+                                    <div className="w-[84px] h-[116px] rounded-md border border-white/40 bg-white/10 flex flex-col items-center pt-8 gap-2.5 relative shadow-lg">
+                                        <div className="w-12 h-1 bg-white/30 rounded-full" />
+                                        <div className="w-10 h-1 bg-white/30 rounded-full mr-2" />
+                                        <div className="w-14 h-1 bg-white/30 rounded-full" />
+                                    </div>
+                                    <div className="absolute -bottom-5 animate-bounce-subtle bg-[#111111] p-1.5 rounded-full border border-[#333] shadow-md z-20">
+                                        <FileDown className="w-[18px] h-[18px] text-white opacity-90" />
+                                    </div>
+                                </div>
                             </div>
-                            <h3 className="text-xl font-medium mb-2 text-text-primary">PDF Export</h3>
-                            <p className="text-text-muted text-base flex-1">Export a pristine, high-resolution A4 PDF with one click. What you see is exactly what you get.</p>
+                            <div className="bg-[#0f0f0f] p-6 flex flex-col justify-center flex-1">
+                                <h3 className="font-serif text-[20px] text-[#f5f5f5] mb-2">Export as PDF</h3>
+                                <p className="text-[13px] text-[#888888] leading-[1.6]">Download a pixel-perfect A4 PDF that looks exactly as you built it.</p>
+                            </div>
                         </motion.div>
-                        {/* 3 */}
-                        <motion.div variants={fadeInUp} className="bg-surface border border-border rounded-2xl p-6 md:p-8 flex flex-col">
-                            <div className="w-12 h-12 bg-surface-2 rounded-xl flex items-center justify-center mb-6">
-                                <Layout className="w-6 h-6 text-text-primary" />
+
+                        {/* CARD 3 - Dark & Light Theme */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 24 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, margin: "-50px" }}
+                            transition={{ duration: 0.4, delay: 0.2 }}
+                            className="bg-[#0f0f0f] border border-[#1f1f1f] rounded-[16px] flex flex-col overflow-hidden group hover:border-[#2a2a2a] hover:scale-[1.01] transition-all duration-200"
+                        >
+                            <div className="h-[220px] bg-[#111111] relative flex items-center justify-center border-b border-[#1a1a1a]">
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <div className="w-[120px] h-[120px] bg-white opacity-[0.15] blur-[60px] rounded-full" />
+                                </div>
+                                <div className="z-10 flex relative -space-x-3 items-center">
+                                    <div className="w-[72px] h-[72px] rounded-full bg-white/95 shadow-xl flex items-center justify-center relative z-20">
+                                        <Sun className="w-7 h-7 text-black drop-shadow-sm" />
+                                    </div>
+                                    <div className="w-[72px] h-[72px] rounded-full bg-[#1a1a1a] border border-[#333] flex items-center justify-center relative z-10 shadow-lg">
+                                        <Moon className="w-6 h-6 text-white opacity-90" />
+                                    </div>
+                                </div>
                             </div>
-                            <h3 className="text-xl font-medium mb-2 text-text-primary">One Perfect Template</h3>
-                            <p className="text-text-muted text-base flex-1">Carefully designed by product designers for maximum clarity, readability, and modern aesthetic impact.</p>
+                            <div className="bg-[#0f0f0f] p-6 flex flex-col justify-center flex-1">
+                                <h3 className="font-serif text-[20px] text-[#f5f5f5] mb-2">Dark & Light Theme</h3>
+                                <p className="text-[13px] text-[#888888] leading-[1.6]">Preview and export your resume in both dark and light modes. Your choice.</p>
+                            </div>
                         </motion.div>
-                        {/* 4 */}
-                        <motion.div variants={fadeInUp} className="bg-surface border border-border rounded-2xl p-6 md:p-8 flex flex-col">
-                            <div className="w-12 h-12 bg-surface-2 rounded-xl flex items-center justify-center mb-6">
-                                <Sun className="w-6 h-6 text-text-primary" />
+
+                        {/* CARD 4 - Auto-Save & Sync */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 24 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, margin: "-50px" }}
+                            transition={{ duration: 0.4, delay: 0.3 }}
+                            className="bg-[#0f0f0f] border border-[#1f1f1f] rounded-[16px] flex flex-col overflow-hidden group hover:border-[#2a2a2a] hover:scale-[1.01] transition-all duration-200"
+                        >
+                            <div className="h-[220px] bg-[#111111] relative flex flex-col items-center justify-center border-b border-[#1a1a1a]">
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <div className="w-[120px] h-[120px] bg-white opacity-[0.15] blur-[60px] rounded-full" />
+                                </div>
+                                <div className="z-10 relative flex flex-col items-center justify-center pb-2">
+                                    <div className="relative flex items-center justify-center w-12 h-12 mt-4 mb-4">
+                                        <div className="absolute w-6 h-6 rounded-full border border-white/50 animate-pulse-ring" style={{ animationDelay: '0s' }} />
+                                        <div className="absolute w-6 h-6 rounded-full border border-white/20 animate-pulse-ring" style={{ animationDelay: '1s' }} />
+                                        <div className="w-[6px] h-[6px] bg-white rounded-full z-10 shadow-[0_0_12px_rgba(255,255,255,0.8)]" />
+                                    </div>
+                                    <span className="font-mono text-[10px] text-[#888888] tracking-widest uppercase bg-[#1a1a1a] px-2.5 py-1 rounded-sm border border-[#333]">changes saved</span>
+                                </div>
                             </div>
-                            <h3 className="text-xl font-medium mb-2 text-text-primary">Dark & Light Theme</h3>
-                            <p className="text-text-muted text-base flex-1">Write your resume comfortably in dark mode, and instantly toggle between themes before exporting.</p>
-                        </motion.div>
-                        {/* 5 */}
-                        <motion.div variants={fadeInUp} className="bg-surface border border-border rounded-2xl p-6 md:p-8 flex flex-col">
-                            <div className="w-12 h-12 bg-surface-2 rounded-xl flex items-center justify-center mb-6">
-                                <Save className="w-6 h-6 text-text-primary" />
+                            <div className="bg-[#0f0f0f] p-6 flex flex-col justify-center flex-1">
+                                <h3 className="font-serif text-[20px] text-[#f5f5f5] mb-2">Auto-Save & Sync</h3>
+                                <p className="text-[13px] text-[#888888] leading-[1.6]">Every edit saves automatically. Your resume is always up to date, everywhere.</p>
                             </div>
-                            <h3 className="text-xl font-medium mb-2 text-text-primary">Auto-Save</h3>
-                            <p className="text-text-muted text-base flex-1">Never lose your work. Every keystroke and drag operation is saved automatically in real time.</p>
-                        </motion.div>
-                        {/* 6 */}
-                        <motion.div variants={fadeInUp} className="bg-surface border border-border rounded-2xl p-6 md:p-8 flex flex-col">
-                            <div className="w-12 h-12 bg-surface-2 rounded-xl flex items-center justify-center mb-6">
-                                <Lock className="w-6 h-6 text-text-primary" />
-                            </div>
-                            <h3 className="text-xl font-medium mb-2 text-text-primary">Secure & Private</h3>
-                            <p className="text-text-muted text-base flex-1">Your data belongs to you. Built on top of enterprise-grade security with Supabase authentication.</p>
                         </motion.div>
                     </motion.div>
                 </div>
