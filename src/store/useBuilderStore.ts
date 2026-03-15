@@ -1,7 +1,5 @@
 import { create } from 'zustand'
-import { supabase } from '@/lib/supabase'
 import type { Block } from '@/types/blocks'
-import { toast } from 'sonner'
 
 interface BuilderState {
     resumeId: string | null

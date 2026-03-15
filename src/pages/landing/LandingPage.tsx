@@ -195,7 +195,7 @@ export function LandingPage() {
                         </div>
                         {/* Browser Content */}
                         <div className="w-full bg-canvas overflow-hidden relative h-fit md:h-[600px] border-t border-border/50">
-                            <img src="/image/Demo.svg" alt="Demo Resume Mockup" className="w-full h-auto object-top" />
+                            <img src="/images/demoresume1.png" alt="Demo Resume Mockup" className="w-full h-auto object-top" />
                         </div>
                     </div>
                 </motion.div>
@@ -312,7 +312,7 @@ export function LandingPage() {
                         <div className="absolute inset-0 bg-accent/5 blur-3xl rounded-full" />
 
                         <div className="relative bg-canvas rounded-xl border border-border shadow-2xl h-fit md:h-[500px] overflow-hidden">
-                            <img src="/image/Demo2.svg" alt="Demo Resume" className="w-full h-auto object-top" />
+                            <img src="/images/demoresume2.png" alt="Demo Resume" className="w-full h-auto object-top" />
                         </div>
                     </motion.div>
                 </div>
