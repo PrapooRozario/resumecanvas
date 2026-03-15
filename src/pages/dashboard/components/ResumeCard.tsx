@@ -13,9 +13,26 @@ interface ResumeCardProps {
 }
 
 export function ResumeCard({ resume, onEdit, onExport, onDelete }: ResumeCardProps) {
-    // Simple "Days ago" calc
-    const daysAgo = Math.floor((new Date().getTime() - new Date(resume.updated_at).getTime()) / (1000 * 3600 * 24))
-    const updatedText = daysAgo === 0 ? 'Today' : daysAgo === 1 ? 'Yesterday' : `${daysAgo} days ago`
+    const getRelativeTimeString = (dateString: string) => {
+        const date = new Date(dateString)
+        const now = new Date()
+        const diffMs = now.getTime() - date.getTime()
+        
+        const diffSecs = Math.floor(diffMs / 1000)
+        const diffMins = Math.floor(diffSecs / 60)
+        const diffHrs = Math.floor(diffMins / 60)
+        const diffDays = Math.floor(diffHrs / 24)
+
+        if (diffSecs < 60) return 'Just now'
+        if (diffMins < 60) return `${diffMins} min${diffMins === 1 ? '' : 's'} ago`
+        if (diffHrs < 24) return `${diffHrs} hour${diffHrs === 1 ? '' : 's'} ago`
+        if (diffDays === 1) return 'Yesterday'
+        if (diffDays < 30) return `${diffDays} days ago`
+        
+        return date.toLocaleDateString()
+    }
+
+    const updatedText = getRelativeTimeString(resume.updated_at)
 
     return (
         <div className="group relative flex flex-col bg-surface-2 border border-border rounded-lg overflow-hidden transition-all hover:border-accent/50 focus-within:ring-2 focus-within:ring-accent">

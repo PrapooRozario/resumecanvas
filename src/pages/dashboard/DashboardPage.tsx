@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   FileText,
   Plus,
@@ -10,9 +11,10 @@ import {
   Loader2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { queryKeys } from "@/lib/queryKeys";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,159 +31,113 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ResumeCard } from "./components/ResumeCard";
+import { ExportModal } from "@/pages/builder/components/ExportModal";
 import { toast } from "sonner";
-
-interface Resume {
-  id: string;
-  title: string;
-  updated_at: string;
-}
+import { useResumes } from "@/hooks/queries/useResumes";
+import { useCreateResume } from "@/hooks/mutations/useCreateResume";
+import { useDeleteResume } from "@/hooks/mutations/useDeleteResume";
+import { useProfile } from "@/hooks/queries/useProfile";
 
 export function DashboardPage() {
   const navigate = useNavigate();
   const { user, signOut } = useAuthStore();
-  const [resumes, setResumes] = useState<Resume[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [resumeCount, setResumeCount] = useState<number>(3); // skeleton count — updated before data loads
-  const [fetchError, setFetchError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  
+  const { data: profile } = useProfile(user?.id);
+  const { data: resumes = [], isLoading, isError, error, refetch } = useResumes(user?.id);
+  const createResumeMutation = useCreateResume(user?.id);
+  const deleteResumeMutation = useDeleteResume(user?.id);
+
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [exportResumeId, setExportResumeId] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
-  const fetchResumes = async () => {
-    setIsLoading(true);
-    if (!user) return;
-
-    // Ensure profile exists (fixes foreign key error for Google OAuth users)
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("id", user.id)
-      .single();
-    if (!profile) {
-      const baseName =
-        user.email
-          ?.split("@")[0]
-          .replace(/[^a-z0-9]/gi, "")
-          .toLowerCase() || "user";
-      const defaultUsername = `${baseName}${Math.floor(Math.random() * 10000)}`;
-      await supabase.from("profiles").insert({
-        id: user.id,
-        username: defaultUsername,
-        full_name: user.user_metadata?.full_name || "ResumeCanvas User",
-      });
-    }
-
-    // Phase 1: Fast COUNT query — sets skeleton count BEFORE data arrives
-    const { count } = await supabase
-      .from("resumes")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id);
-
-    if (count !== null && count > 0) {
-      setResumeCount(count);
-    }
-
-    // Phase 2: Full data fetch
-    const { data, error } = await supabase
-      .from("resumes")
-      .select("id, title, updated_at")
-      .eq("user_id", user.id)
-      .order("updated_at", { ascending: false });
-
-    if (error) {
-      setFetchError(error.message);
-    } else if (data) {
-      setResumes(data);
-      setFetchError(null);
-    }
-    setIsLoading(false);
-  };
-
-  useEffect(() => {
-    fetchResumes();
-  }, [user]);
-
+  // ... (keep rest until userInitials)
   const handleNewResume = async () => {
     if (resumes.length >= 1) {
       setShowUpgradeModal(true);
       return;
     }
 
-    setIsCreating(true);
-    const { data, error } = await supabase
-      .from("resumes")
-      .insert({
-        user_id: user?.id,
-        title: "Untitled Resume",
-        // default empty blocks can be initialized when the builder mounts
-      })
-      .select("id")
-      .single();
-
-    setIsCreating(false);
-
-    if (!error && data) {
+    try {
+      const data = await createResumeMutation.mutateAsync("Untitled Resume");
       navigate(`/builder/${data.id}`);
+    } catch (err) {
+      toast.error("Failed to create resume");
     }
   };
 
-  const handleDeleteResume = async (id: string) => {
-    // Find the resume object first to allow undo
-    const resumeToDelete = resumes.find((r) => r.id === id);
+  const confirmDeleteResume = async () => {
+    if (!deleteConfirmId) return;
+    const resumeToDelete = resumes.find((r) => r.id === deleteConfirmId);
+    
+    deleteResumeMutation.mutate(deleteConfirmId, {
+      onSuccess: () => {
+        toast.success("Resume deleted", {
+          action: resumeToDelete
+            ? {
+                label: "Undo",
+                onClick: async () => {
+                  const { error: undoError } = await supabase
+                    .from("resumes")
+                    .insert({ ...resumeToDelete });
 
-    const { error } = await supabase.from("resumes").delete().eq("id", id);
-    if (!error) {
-      setResumes(resumes.filter((r) => r.id !== id));
-      toast.success("Resume deleted", {
-        action: resumeToDelete
-          ? {
-              label: "Undo",
-              onClick: async () => {
-                // Fast optimistic UI restore
-                setResumes((prev) =>
-                  [resumeToDelete, ...prev].sort(
-                    (a, b) =>
-                      new Date(b.updated_at).getTime() -
-                      new Date(a.updated_at).getTime(),
-                  ),
-                );
-
-                // Re-insert into DB
-                const { error: undoError } = await supabase
-                  .from("resumes")
-                  .insert({
-                    ...resumeToDelete,
-                  });
-
-                if (undoError) {
-                  toast.error("Failed to undo deletion");
-                  // Revert optimistic insert
-                  setResumes((prev) => prev.filter((r) => r.id !== id));
-                } else {
-                  toast.success("Resume restored");
-                }
-              },
-            }
-          : undefined,
-      });
-    } else {
-      toast.error("Failed to delete resume");
-    }
+                  if (undoError) {
+                    toast.error("Failed to undo deletion");
+                  } else {
+                    queryClient.invalidateQueries({ queryKey: queryKeys.resumes(user?.id!) });
+                    toast.success("Resume restored");
+                  }
+                },
+              }
+            : undefined,
+        });
+      }
+    });
+    setDeleteConfirmId(null);
   };
 
   const handleEditResume = (id: string) => {
     navigate(`/builder/${id}`);
   };
 
-  const handleExportPDF = (id: string) => {
-    // Placeholder for future export functionality
-    console.log("Exporting...", id);
-    alert("Export PDF coming soon!");
+  const handleEditHover = (id: string) => {
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.blocks(id),
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from("blocks")
+          .select("*")
+          .eq("resume_id", id)
+          .order("order_index", { ascending: true });
+        if (error) throw error;
+        return data;
+      },
+      staleTime: 1000 * 60 * 3, // 3 minutes
+    });
   };
 
-  const userInitials = user?.email
-    ? user.email.substring(0, 2).toUpperCase()
-    : "RC";
+  const handleExportPDF = (id: string) => {
+    setExportResumeId(id);
+  };
+
+  const executeExport = async (filename: string) => {
+    setIsExporting(true);
+    // Since PDF generation requires the rendered DOM canvas, the cleanest way 
+    // from the dashboard is to deep link into the builder with an export flag
+    navigate(`/builder/${exportResumeId}?export=${encodeURIComponent(filename)}`);
+    // Alternatively, we could visually render a hidden instance of the resume here, 
+    // but that is heavy. Routing to builder is standard for DOM-based capture.
+    setIsExporting(false);
+    setExportResumeId(null);
+  };
+
+  const userInitials = profile?.full_name 
+    ? profile.full_name.substring(0, 2).toUpperCase()
+    : user?.email 
+      ? user.email.substring(0, 2).toUpperCase() 
+      : "RC";
 
   return (
     <div className="min-h-screen bg-background text-text-primary">
@@ -199,19 +155,20 @@ export function DashboardPage() {
             variant="outline"
             size="sm"
             onClick={handleNewResume}
-            disabled={isCreating}
+            disabled={createResumeMutation.isPending}
           >
-            {isCreating ? (
+            {createResumeMutation.isPending ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             ) : (
               <Plus className="w-4 h-4 mr-2" />
             )}
-            {isCreating ? "Creating..." : "New Resume"}
+            {createResumeMutation.isPending ? "Creating..." : "New Resume"}
           </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger className="focus:outline-none focus:ring-2 focus:ring-accent rounded-full">
               <Avatar className="w-8 h-8 cursor-pointer ring-1 ring-border hover:ring-accent transition-all">
+                {profile?.avatar_url && <AvatarImage src={profile.avatar_url} />}
                 <AvatarFallback>{userInitials}</AvatarFallback>
               </Avatar>
             </DropdownMenuTrigger>
@@ -243,7 +200,7 @@ export function DashboardPage() {
 
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: resumeCount }).map((_, i) => (
+            {Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
                 className="flex flex-col bg-surface-2 border border-border rounded-lg overflow-hidden animate-pulse"
@@ -258,17 +215,17 @@ export function DashboardPage() {
               </div>
             ))}
           </div>
-        ) : fetchError ? (
+        ) : isError ? (
           <div className="w-full max-w-2xl mx-auto mt-16 text-center space-y-6 bg-destructive/5 border border-destructive/20 rounded-2xl p-12">
             <AlertCircle className="w-12 h-12 text-destructive mx-auto opacity-80" />
             <div className="space-y-2">
               <h2 className="text-xl font-medium text-destructive">
                 Failed to load resumes
               </h2>
-              <p className="text-sm text-text-secondary">{fetchError}</p>
+              <p className="text-sm text-text-secondary">{error?.message}</p>
             </div>
             <Button
-              onClick={fetchResumes}
+              onClick={() => refetch()}
               variant="outline"
               className="border-destructive/30 hover:bg-destructive/10"
             >
@@ -279,10 +236,8 @@ export function DashboardPage() {
         ) : resumes.length === 0 ? (
           /* Empty State - animated dashed border card mockup */
           <div className="w-full max-w-lg mx-auto mt-16 text-center space-y-8">
-            {/* Animated card mockup */}
             <div className="border-2 border-dashed border-border rounded-2xl p-10 bg-surface-2/20 transition-all hover:bg-surface-2/40">
               <div className="flex flex-col items-center gap-5">
-                {/* Mini paper mockup */}
                 <div className="w-20 h-28 border border-border rounded-lg bg-surface/60 shadow-sm flex flex-col p-3 gap-2 animate-float">
                   <div className="w-3/4 h-2 bg-text-muted/30 rounded-sm" />
                   <div className="w-full h-[1px] bg-border/40 my-0.5" />
@@ -301,8 +256,8 @@ export function DashboardPage() {
                     Create your first resume to get started
                   </p>
                 </div>
-                <Button onClick={handleNewResume} disabled={isCreating}>
-                  {isCreating ? (
+                <Button onClick={handleNewResume} disabled={createResumeMutation.isPending}>
+                  {createResumeMutation.isPending ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   ) : (
                     <Plus className="w-4 h-4 mr-2" />
@@ -316,13 +271,17 @@ export function DashboardPage() {
           /* Resume Grid */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {resumes.map((resume) => (
-              <ResumeCard
+              <div
                 key={resume.id}
-                resume={resume}
-                onEdit={handleEditResume}
-                onExport={handleExportPDF}
-                onDelete={handleDeleteResume}
-              />
+                onMouseEnter={() => handleEditHover(resume.id)}
+              >
+                <ResumeCard
+                  resume={resume}
+                  onEdit={handleEditResume}
+                  onExport={handleExportPDF}
+                  onDelete={setDeleteConfirmId}
+                />
+              </div>
             ))}
           </div>
         )}
@@ -347,6 +306,45 @@ export function DashboardPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
+        <DialogContent className="w-fit">
+          <DialogHeader>
+            <DialogTitle>Delete Resume</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this resume? This action can be undone briefly via the toast notification.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-6">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteConfirmId(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDeleteResume}
+              disabled={deleteResumeMutation.isPending}
+            >
+              {deleteResumeMutation.isPending && (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              )}
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Export Modal */}
+      <ExportModal
+        open={!!exportResumeId}
+        onOpenChange={(open) => !open && setExportResumeId(null)}
+        onExport={executeExport}
+        isExporting={isExporting}
+      />
     </div>
   );
 }
+

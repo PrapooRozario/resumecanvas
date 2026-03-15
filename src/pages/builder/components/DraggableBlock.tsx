@@ -4,18 +4,18 @@ import { CSS } from '@dnd-kit/utilities'
 import { GripVertical, Trash2 } from 'lucide-react'
 import type { Block } from '@/types/blocks'
 import { useBuilderStore } from '@/store/useBuilderStore'
+import { useDeleteBlock } from '@/hooks/mutations/useDeleteBlock'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 
-// We removed BlockRenderer completely, so we accept an overrideRender prop
-// which is the raw React element from ResumeTemplate
 interface DraggableBlockProps {
     block: Block
     overrideRender?: React.ReactNode
 }
 
 export function DraggableBlock({ block, overrideRender }: DraggableBlockProps) {
-    const { selectedBlockId, selectBlock, removeBlock } = useBuilderStore()
+    const { resumeId, selectedBlockId, selectBlock, removeBlock, setClean } = useBuilderStore()
+    const deleteBlockMutation = useDeleteBlock(resumeId!)
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
     const {
@@ -47,6 +47,9 @@ export function DraggableBlock({ block, overrideRender }: DraggableBlockProps) {
     const handleConfirmDelete = () => {
         removeBlock(block.id)
         setIsDeleteDialogOpen(false)
+        deleteBlockMutation.mutate(block.id, {
+            onSuccess: () => setClean()
+        })
     }
 
     return (

@@ -4,18 +4,20 @@ import { DndContext, DragOverlay, closestCenter, KeyboardSensor, PointerSensor, 
 import type { DragStartEvent, DragEndEvent, DragMoveEvent } from '@dnd-kit/core'
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 
-import { supabase } from '@/lib/supabase'
 import { useBuilderStore } from '@/store/useBuilderStore'
+import { useResume } from '@/hooks/queries/useResume'
+import { useBlocks } from '@/hooks/queries/useBlocks'
+import { useAddBlock } from '@/hooks/mutations/useAddBlock'
+import { useReorderBlocks } from '@/hooks/mutations/useReorderBlocks'
 
 import { TopToolbar } from './components/TopToolbar'
 import { LeftPanel } from './components/LeftPanel'
 import { CenterPanel } from './components/CenterPanel'
 import { RightPanel } from './components/RightPanel'
+import { BuilderAutoSave } from './components/BuilderAutoSave'
 import { toast } from 'sonner'
 import { Loader2, Settings2, Blocks } from 'lucide-react'
 import { ResumeTemplate } from '@/components/resume/ResumeTemplate'
-
-
 
 const getSidebarBlockPreview = (type: string | null) => {
     let defaultContent: any = {};
@@ -43,10 +45,21 @@ const getSidebarBlockPreview = (type: string | null) => {
 export function BuilderPage() {
     const { resumeId } = useParams()
     const navigate = useNavigate()
-    const { blocks, addBlock, reorderBlocks, selectBlock, setResume, setClean, theme } = useBuilderStore()
-    const [loading, setLoading] = useState(true)
+    
+    // Remote State (React Query)
+    const { data: resumeData, isLoading: resumeLoading, isError: resumeError } = useResume(resumeId)
+    const { data: blocksData, isLoading: blocksLoading, isError: blocksError } = useBlocks(resumeId)
+    
+    const addBlockMutation = useAddBlock(resumeId!)
+    const reorderBlocksMutation = useReorderBlocks(resumeId!)
 
-    // Mobile Panel State (hidden on desktop via css)
+    // Local UI State (Zustand)
+    const { blocks, addBlock, reorderBlocks, selectBlock, setResume, setClean, theme } = useBuilderStore()
+
+    // Control initial store sync
+    const [isInitialized, setIsInitialized] = useState(false)
+
+    // Mobile Panel State
     const [mobilePanel, setMobilePanel] = useState<'none' | 'left' | 'right'>('none')
 
     const [activeId, setActiveId] = useState<string | null>(null);
@@ -58,6 +71,24 @@ export function BuilderPage() {
         useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
     );
+
+    useEffect(() => {
+        if (!resumeId) {
+            navigate('/dashboard')
+            return
+        }
+        if (resumeError || blocksError) {
+            toast.error("Failed to load resume. It may have been deleted.")
+            navigate('/dashboard')
+            return
+        }
+        
+        if (!isInitialized && resumeData && blocksData) {
+            setResume(resumeId, resumeData.title, blocksData)
+            setTimeout(() => setClean(), 50)
+            setIsInitialized(true)
+        }
+    }, [resumeId, resumeData, blocksData, resumeError, blocksError, isInitialized, navigate, setResume, setClean])
 
     const handleDragStart = (event: DragStartEvent) => {
         setActiveId(event.active.id as string);
@@ -72,21 +103,17 @@ export function BuilderPage() {
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
 
-        // Always clear active drag state first, no matter what
         setActiveId(null);
         setActiveData(null);
         setOverId(null);
 
-        // Guard 1: Nothing was dropped on any target — dropped in empty space
         if (!over) return;
 
-        // Guard 2: Block was dropped back onto the sidebar or another invalid zone
         const isCanvas = over.id === 'canvas-drop-zone';
         const isExistingBlock = blocks.some(b => b.id === over.id);
 
         if (!isCanvas && !isExistingBlock) return;
 
-        // Guard 3: If the dragged item came FROM the canvas (reorder), not the sidebar
         const isReorder = blocks.some((b) => b.id === active.id);
         
         if (isReorder) {
@@ -94,20 +121,20 @@ export function BuilderPage() {
             return;
         }
 
-        // Only reach here if: dragged from sidebar AND dropped on a valid canvas target
         const type = active.data.current?.type;
         const newBlockId = crypto.randomUUID();
-        
         const defaultContent = getSidebarBlockPreview(type).content;
 
         const newBlock: any = {
             id: newBlockId,
+            resume_id: resumeId,
             type,
             order_index: blocks.length,
             content: defaultContent,
             styles: {}
         };
 
+        // UI Update
         if (isCanvas) {
             addBlock(newBlock);
         } else {
@@ -118,6 +145,11 @@ export function BuilderPage() {
                 addBlock(newBlock);
             }
         }
+        
+        // Remote Update
+        addBlockMutation.mutate(newBlock, {
+            onSuccess: () => setClean() // clear the generic dirty flag
+        });
 
         selectBlock(newBlockId);
     };
@@ -127,7 +159,18 @@ export function BuilderPage() {
             const oldIndex = blocks.findIndex(b => b.id === activeIdParam);
             const newIndex = blocks.findIndex(b => b.id === overIdParam);
             if (oldIndex !== -1 && newIndex !== -1) {
+                // UI Update
                 reorderBlocks(oldIndex, newIndex);
+                
+                // We need the NEW ordered array to send to the server
+                // `blocks` here is the old state. Since we just triggered `reorderBlocks` synchronously,
+                // we'll get the updated state from useBuilderStore.getState().blocks
+                const newOrderedBlocks = useBuilderStore.getState().blocks;
+                
+                // Remote Update
+                reorderBlocksMutation.mutate(newOrderedBlocks, {
+                    onSuccess: () => setClean()
+                });
             }
         }
     }
@@ -139,63 +182,16 @@ export function BuilderPage() {
     };
 
     useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
+        const handleKey = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
                 selectBlock(null)
             }
         }
-        window.addEventListener('keydown', handleKeyDown)
-        return () => window.removeEventListener('keydown', handleKeyDown)
+        window.addEventListener('keydown', handleKey)
+        return () => window.removeEventListener('keydown', handleKey)
     }, [selectBlock])
 
-    useEffect(() => {
-        if (!resumeId) {
-            navigate('/dashboard')
-            return
-        }
-
-        const loadData = async () => {
-            setLoading(true)
-
-            try {
-                const { data: resumeData, error: resumeErr } = await supabase
-                    .from('resumes')
-                    .select('*')
-                    .eq('id', resumeId)
-                    .single()
-
-                if (resumeErr || !resumeData) {
-                    throw new Error("Resume not found")
-                }
-
-                const { data: blocksData, error: blocksErr } = await supabase
-                    .from('blocks')
-                    .select('*')
-                    .eq('resume_id', resumeId)
-                    .order('order_index', { ascending: true })
-
-                if (blocksErr) throw blocksErr
-
-                const fetchedBlocks = blocksData ? blocksData.map(b => ({
-                    ...b,
-                    styles: b.styles || {}
-                })) : []
-
-                setResume(resumeId, resumeData.title, fetchedBlocks)
-                setTimeout(() => setClean(), 50)
-            } catch (err: any) {
-                console.error("Resume load failed:", err)
-                toast.error("Failed to load resume. It may have been deleted.")
-                navigate('/dashboard')
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        loadData()
-    }, [resumeId, navigate, setResume, setClean])
-
-    if (loading) {
+    if (resumeLoading || blocksLoading || !isInitialized) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[100dvh] bg-surface-2 gap-4">
                 <Loader2 className="w-8 h-8 text-text-primary animate-spin" />
@@ -208,11 +204,9 @@ export function BuilderPage() {
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
                 <div className="h-[100dvh] w-screen overflow-hidden flex flex-col bg-background text-text-primary">
                     <TopToolbar />
+                    {resumeId && <BuilderAutoSave resumeId={resumeId} />}
                     
-                    {/* Main Content Area */}
                     <div className="flex flex-1 overflow-hidden relative">
-                        
-                        {/* Left Panel - Hidden on mobile unless active */}
                         <div className={`
                             absolute md:relative z-30 h-full w-full md:w-64 lg:w-72 flex-shrink-0 bg-surface border-r border-border transition-transform duration-300 md:transform-none
                             ${mobilePanel === 'left' ? 'translate-x-0' : '-translate-x-full'}
@@ -220,22 +214,18 @@ export function BuilderPage() {
                             <LeftPanel />
                         </div>
 
-                        {/* Center Canvas */}
                         <div className="flex-1 h-full min-w-0" onClick={() => setMobilePanel('none')}>
                             <CenterPanel />
                         </div>
 
-                        {/* Right Panel - Hidden on mobile unless active */}
                         <div className={`
                             absolute right-0 md:relative z-30 h-full w-full md:w-72 lg:w-80 flex-shrink-0 bg-surface border-l border-border transition-transform duration-300 md:transform-none
                             ${mobilePanel === 'right' ? 'translate-x-0' : 'translate-x-full'}
                         `}>
                             <RightPanel />
                         </div>
-                        
                     </div>
 
-                    {/* Mobile Bottom Bar (visible only < 768px) */}
                     <div className="md:hidden flex h-16 border-t border-border bg-surface shrink-0">
                         <button 
                             onClick={() => setMobilePanel(p => p === 'left' ? 'none' : 'left')}

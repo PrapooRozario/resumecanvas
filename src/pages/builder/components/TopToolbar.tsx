@@ -7,9 +7,9 @@ import jsPDF from 'jspdf'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { PreviewModal } from './PreviewModal'
-import { ExportModal } from './ExportModal'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { supabase } from '@/lib/supabase'
+import { ExportModal } from './ExportModal'
 
 export function TopToolbar() {
     const { resumeId, title, setTitle, theme, setTheme, isDirty, isSaving, lastSaved, blocks, selectBlock } = useBuilderStore()
@@ -171,6 +171,8 @@ export function TopToolbar() {
                             )}
                         </Tooltip>
                     </TooltipProvider>
+
+
 
                     <TooltipProvider delayDuration={200}>
                         <Tooltip>

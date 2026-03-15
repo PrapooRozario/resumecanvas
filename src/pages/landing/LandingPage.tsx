@@ -1,8 +1,18 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowRight, Move, FileDown, Layout, Sun, Save, Lock, Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useAuthStore } from '@/store/useAuthStore'
+import { useProfile } from '@/hooks/queries/useProfile'
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 import type { Variants } from 'framer-motion'
 
@@ -24,8 +34,19 @@ const staggerContainer: Variants = {
 }
 
 export function LandingPage() {
+    const navigate = useNavigate()
+    const { user, isLoading: authLoading, signOut } = useAuthStore()
+    const { data: profile, isLoading: profileLoading } = useProfile(user?.id)
+
     const [scrolled, setScrolled] = useState(false)
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+    const showLoading = authLoading || (user && profileLoading)
+    
+    const handleSignOut = async () => {
+        await signOut()
+        navigate('/')
+    }
 
     useEffect(() => {
         const handleScroll = () => {
@@ -48,12 +69,51 @@ export function LandingPage() {
 
                     {/* Desktop Nav */}
                     <div className="hidden md:flex items-center gap-4">
-                        <Link to="/login" className="text-sm font-medium text-text-muted hover:text-text-primary transition-colors">
-                            Sign in
-                        </Link>
-                        <Button asChild size="sm" className="bg-text-primary text-background hover:bg-text-secondary rounded-full px-5">
-                            <Link to="/register">Get started</Link>
-                        </Button>
+                        {showLoading ? (
+                            <>
+                                <div className="w-20 h-8 bg-surface-2 animate-pulse rounded-md" />
+                                <div className="w-8 h-8 rounded-full bg-surface-2 animate-pulse" />
+                            </>
+                        ) : user ? (
+                            <>
+                                <Button asChild variant="ghost" size="sm" className="text-text-muted hover:text-text-primary transition-colors">
+                                    <Link to="/dashboard">Dashboard</Link>
+                                </Button>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger className="focus:outline-none focus:ring-2 focus:ring-accent rounded-full">
+                                        <Avatar className="w-8 h-8 cursor-pointer ring-1 ring-border hover:ring-accent transition-all">
+                                            {profile?.avatar_url && <AvatarImage src={profile.avatar_url} />}
+                                            <AvatarFallback className="bg-surface-2 text-text-primary text-xs">
+                                                {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase() || 'U'}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="right" className="w-48">
+                                        <div className="px-4 py-2 flex flex-col gap-0.5 pointer-events-none">
+                                            <p className="text-sm text-text-primary/70">{profile?.full_name || 'User'}</p>
+                                            <p className="text-[12px] text-text-muted">@{profile?.username || user.email?.split('@')[0]}</p>
+                                        </div>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={() => navigate('/dashboard')} className="cursor-pointer flex items-center">
+                                            Dashboard
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer flex items-center text-text-secondary hover:text-destructive">
+                                            Sign out
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </>
+                        ) : (
+                            <>
+                                <Link to="/login" className="text-sm font-medium text-text-muted hover:text-text-primary transition-colors">
+                                    Sign in
+                                </Link>
+                                <Button asChild size="sm" className="bg-text-primary text-background hover:bg-text-secondary rounded-full px-5">
+                                    <Link to="/register">Get started</Link>
+                                </Button>
+                            </>
+                        )}
                     </div>
 
                     {/* Mobile Menu Toggle */}
