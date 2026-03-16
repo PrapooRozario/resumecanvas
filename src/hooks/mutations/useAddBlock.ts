@@ -22,7 +22,11 @@ export function useAddBlock(resumeId: string) {
         .single()
         
       if (error) throw error
-      return data
+
+      const now = new Date().toISOString()
+      await supabase.from('resumes').update({ updated_at: now }).eq('id', resumeId)
+
+      return { data, now }
     },
     onMutate: async (newBlock) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.blocks(resumeId) })
@@ -38,8 +42,11 @@ export function useAddBlock(resumeId: string) {
         queryClient.setQueryData(queryKeys.blocks(resumeId), context.previousBlocks)
       }
     },
-    onSuccess: () => {
+    onSuccess: ({ now }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.blocks(resumeId) })
+      queryClient.setQueriesData<any[]>({ queryKey: ['resumes'] }, (list) =>
+        list?.map((r) => (r.id === resumeId ? { ...r, updated_at: now } : r))
+      )
     }
   })
 }

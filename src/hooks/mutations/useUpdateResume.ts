@@ -7,9 +7,10 @@ export function useUpdateResume(resumeId: string) {
   
   return useMutation({
     mutationFn: async (updates: { title?: string; theme?: 'light' | 'dark' }) => {
+      const now = new Date().toISOString()
       const { data, error } = await supabase
         .from('resumes')
-        .update({ ...updates, updated_at: new Date().toISOString() })
+        .update({ ...updates, updated_at: now })
         .eq('id', resumeId)
         .select()
         .single()
@@ -21,11 +22,21 @@ export function useUpdateResume(resumeId: string) {
       await queryClient.cancelQueries({ queryKey: queryKeys.resume(resumeId) })
       
       const previousResume = queryClient.getQueryData(queryKeys.resume(resumeId))
-      
+      const now = new Date().toISOString()
+
+      // Optimistically update the single-resume cache
       queryClient.setQueryData(queryKeys.resume(resumeId), (old: any) => ({
         ...old,
         ...updates,
+        updated_at: now,
       }))
+
+      // Optimistically update the dashboard list cache so it shows "Just now" immediately
+      queryClient.setQueriesData<any[]>({ queryKey: ['resumes'] }, (list) =>
+        list?.map((r) =>
+          r.id === resumeId ? { ...r, ...updates, updated_at: now } : r
+        )
+      )
       
       return { previousResume }
     },
@@ -34,8 +45,13 @@ export function useUpdateResume(resumeId: string) {
         queryClient.setQueryData(queryKeys.resume(resumeId), context.previousResume)
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Invalidate both the single resume and the full resumes list
       queryClient.invalidateQueries({ queryKey: queryKeys.resume(resumeId) })
+      // Update the resumes list with the confirmed server value
+      queryClient.setQueriesData<any[]>({ queryKey: ['resumes'] }, (list) =>
+        list?.map((r) => (r.id === resumeId ? { ...r, ...data } : r))
+      )
     }
   })
 }

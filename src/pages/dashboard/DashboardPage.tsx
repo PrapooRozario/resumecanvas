@@ -133,13 +133,18 @@ export function DashboardPage() {
   return (
     <div className="min-h-screen bg-background text-text-primary">
       {/* Floating Navbar */}
-      <header className="fixed top-0 inset-x-0 z-50 bg-transparent h-[56px] md:h-[64px] flex items-center">
-        <div className="w-full max-w-[960px] mx-auto px-5 md:px-8 flex items-center justify-between">
-          <Link to="/" className="font-serif italic text-[18px] font-[400] text-[#f5f5f5] hover:opacity-70 transition-opacity duration-200">
+      <header className="fixed top-0 inset-x-0 z-50 bg-transparent h-[52px] md:h-[56px] flex items-center">
+        <div className="w-full max-w-[1100px] mx-auto px-[20px] md:px-[32px] grid grid-cols-2 md:grid-cols-[1fr_auto_1fr] items-center">
+          <Link
+            to="/"
+            className="justify-self-start font-serif italic text-[17px] font-normal text-[#f5f5f5] hover:opacity-65 transition-opacity duration-150"
+          >
             ResumeCanvas
           </Link>
 
-          <div className="flex items-center gap-2">
+          <nav className="hidden md:flex justify-self-center items-center gap-[36px]"></nav>
+
+          <div className="justify-self-end flex items-center gap-[8px]">
             <Button
               variant="default"
               className="hidden md:flex bg-[#f5f5f5] text-[#0a0a0a] text-[13px] font-medium px-[18px] py-0 h-8 rounded-full hover:bg-white hover:scale-[1.02] active:scale-[0.98] transition-all duration-150 mr-2"
@@ -155,27 +160,48 @@ export function DashboardPage() {
             </Button>
 
             <DropdownMenu>
-              <DropdownMenuTrigger className="focus:outline-none rounded-full ml-1">
-                <Avatar className="w-8 h-8 rounded-full cursor-pointer hover:opacity-80 transition-opacity duration-150 ui-state-open:ring-2 ui-state-open:ring-[#f5f5f5] ui-state-open:ring-offset-2 ui-state-open:ring-offset-transparent">
-                  {profile?.avatar_url && <AvatarImage src={profile.avatar_url} className="object-cover" />}
+              <DropdownMenuTrigger className="focus:outline-none rounded-full">
+                <Avatar className="w-[30px] h-[30px] rounded-full cursor-pointer hover:opacity-75 transition-opacity duration-150">
+                  {profile?.avatar_url && (
+                    <AvatarImage
+                      src={profile.avatar_url}
+                      className="object-cover"
+                    />
+                  )}
                   <AvatarFallback className="bg-[#1a1a1a] border border-[#2a2a2a] text-[#888888] text-[12px] uppercase">
-                     {profile?.full_name ? profile.full_name.charAt(0) : user?.email?.charAt(0) || 'U'}
+                    {profile?.full_name
+                      ? profile.full_name.charAt(0)
+                      : user?.email?.charAt(0) || "U"}
                   </AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="right" sideOffset={8} className="bg-[#111111] border border-[#1f1f1f] rounded-[10px] p-1.5 min-w-[180px] shadow-xl">
-                  <div className="px-2.5 py-2 flex flex-col pointer-events-none">
-                      <p className="text-[13px] text-[#f5f5f5] font-medium">{profile?.full_name || 'User'}</p>
-                      <p className="text-[12px] text-[#555555]">@{profile?.username || user?.email?.split('@')[0]}</p>
-                  </div>
-                  <DropdownMenuSeparator className="bg-[#1f1f1f] my-1" />
-                  <DropdownMenuItem onClick={() => {}} className="cursor-pointer text-[13px] text-[#888888] hover:text-[#f5f5f5] hover:bg-[#1a1a1a] focus:bg-[#1a1a1a] focus:text-[#f5f5f5] rounded-[6px] px-2.5 py-2 transition-colors duration-100">
-                      Settings
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-[#1f1f1f] my-1" />
-                  <DropdownMenuItem onClick={signOut} className="cursor-pointer text-[13px] text-[#888888] hover:text-[#ff4444] hover:bg-[#1a1a1a] focus:bg-[#1a1a1a] focus:text-[#ff4444] rounded-[6px] px-2.5 py-2 transition-colors duration-100">
-                      Sign out
-                  </DropdownMenuItem>
+              <DropdownMenuContent
+                align="right"
+                sideOffset={8}
+                className="bg-[#111111] border border-[#1f1f1f] rounded-[10px] p-[6px] min-w-[180px] shadow-xl"
+              >
+                <div className="px-2 py-1.5 flex flex-col pointer-events-none">
+                  <p className="text-[13px] text-[#f5f5f5] font-medium">
+                    {profile?.full_name || "User"}
+                  </p>
+                  <p className="text-[12px] text-[#555555]">
+                    @{profile?.username || user?.email?.split("@")[0]}
+                  </p>
+                </div>
+                <DropdownMenuSeparator className="bg-[#1f1f1f] my-1" />
+                <DropdownMenuItem
+                  onClick={() => {}}
+                  className="cursor-pointer text-[13px] text-[#888888] hover:text-[#f5f5f5] hover:bg-[#1a1a1a] focus:bg-[#1a1a1a] focus:text-[#f5f5f5] rounded-[6px] px-2 py-1.5 transition-colors duration-100"
+                >
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-[#1f1f1f] my-1" />
+                <DropdownMenuItem
+                  onClick={signOut}
+                  className="cursor-pointer text-[13px] text-[#888888] hover:text-[#ff4444] hover:bg-[#1a1a1a] focus:bg-[#1a1a1a] focus:text-[#ff4444] rounded-[6px] px-2 py-1.5 transition-colors duration-100"
+                >
+                  Sign out
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

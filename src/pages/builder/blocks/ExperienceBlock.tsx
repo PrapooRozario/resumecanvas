@@ -19,16 +19,20 @@ export function ExperienceBlock({ block }: ExperienceBlockProps) {
         <div className="w-full flex flex-col sm:flex-row gap-4 sm:gap-8 group">
             {/* Left Column: Dates */}
             <div className="sm:w-32 shrink-0 pt-0.5">
-                <p className="font-mono text-xs text-text-muted uppercase tracking-wider">
-                    {startDate} — {endDate}
+                <p className="font-mono text-xs text-text-muted uppercase tracking-wider flex items-center gap-1">
+                    {startDate || <span className="text-text-muted/40">Start</span>}
+                    <span>—</span>
+                    {endDate || <span className="text-text-muted/40">End</span>}
                 </p>
             </div>
 
             {/* Right Column: Details */}
             <div className="flex-1 space-y-2">
                 <div>
-                    <h3 className="text-base font-semibold text-text-primary flex items-center gap-2">
-                        {role} at {company}
+                    <h3 className="text-base font-semibold text-text-primary flex items-center gap-1.5 flex-wrap">
+                        {role || <span className="text-text-muted/40">Job Title</span>}
+                        <span className="text-text-muted/60 font-normal">at</span>
+                        <span className="text-accent">{company || <span className="text-text-muted/40">Company Name</span>}</span>
                         {url && (
                             <a
                                 href={url}
@@ -40,17 +44,15 @@ export function ExperienceBlock({ block }: ExperienceBlockProps) {
                             </a>
                         )}
                     </h3>
-                    {location && (
-                        <p className="text-sm text-text-muted mt-0.5">{location}</p>
-                    )}
+                    <div className="text-sm text-text-muted mt-0.5">
+                        {location || <span className="text-text-muted/40">Location</span>}
+                    </div>
                 </div>
 
-                {description && (
-                    <div
-                        className="prose prose-sm max-w-none text-text-secondary prose-p:leading-[1.6] prose-a:text-accent font-sans"
-                        dangerouslySetInnerHTML={{ __html: description }}
-                    />
-                )}
+                <div 
+                    className="prose-p:leading-[1.6] prose-a:text-accent font-sans text-text-secondary w-full"
+                    dangerouslySetInnerHTML={{ __html: description || '<p class="text-text-muted/40">Describe your responsibilities and achievements...</p>' }}
+                />
             </div>
         </div>
     )

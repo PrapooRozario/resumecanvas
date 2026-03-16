@@ -1,59 +1,40 @@
-import { useEffect } from 'react'
 import type { Block } from '@/types/blocks'
 import { useBuilderStore } from '@/store/useBuilderStore'
-import { useEditor, EditorContent } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
-import Link from '@tiptap/extension-link'
-import { Bold, Italic, Link as LinkIcon } from 'lucide-react'
 
 interface TextPropertiesProps {
     block: Block
 }
 
+// Strip HTML tags to get plain text for display in the textarea
+function htmlToPlainText(html: string): string {
+    return html
+        .replace(/<p[^>]*>/gi, '')
+        .replace(/<\/p>/gi, '\n')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<[^>]+>/g, '')    // remove any remaining tags
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&nbsp;/g, ' ')
+        .trim()
+}
+
+// Convert plain text back to simple paragraph HTML
+function plainTextToHtml(text: string): string {
+    if (!text.trim()) return ''
+    return text
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+        .map(line => `<p>${line}</p>`)
+        .join('')
+}
+
 export function TextProperties({ block }: TextPropertiesProps) {
     const { updateBlock } = useBuilderStore()
     const content = block.content || {}
-    const html = content.html ?? '<p>Add your bio or description here...</p>'
-
-    const editor = useEditor({
-        extensions: [
-            StarterKit.configure({ heading: false, codeBlock: false, horizontalRule: false, blockquote: false }),
-            Link.configure({ openOnClick: false }),
-        ],
-        content: html,
-        onUpdate: ({ editor }) => {
-            updateBlock(block.id, {
-                content: { ...content, html: editor.getHTML() }
-            })
-        },
-        editorProps: {
-            attributes: {
-                class: 'min-h-[150px] w-full p-3 bg-background border border-border rounded-md text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-accent transition-all prose prose-sm max-w-none prose-p:leading-[1.7]',
-            },
-        },
-    })
-
-    // Sync external changes (though rare in right panel except on block switch)
-    useEffect(() => {
-        if (editor && editor.getHTML() !== html) {
-            editor.commands.setContent(html)
-        }
-    }, [block.id]) // Intentionally relying on block.id to reset content if selection changes
-
-    const setLink = () => {
-        if (!editor) return
-        const previousUrl = editor.getAttributes('link').href
-        const url = window.prompt('Enter URL', previousUrl)
-
-        if (url === null) return // cancelled
-        if (url === '') {
-            editor.chain().focus().extendMarkRange('link').unsetLink().run()
-            return
-        }
-        editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
-    }
-
-    if (!editor) return null
+    const html = content.html ?? ''
+    const plainText = htmlToPlainText(html)
 
     return (
         <div className="space-y-3">
@@ -61,32 +42,17 @@ export function TextProperties({ block }: TextPropertiesProps) {
                 Content
             </label>
             <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-1 bg-surface-2 p-1 rounded-md border border-border">
-                    <button
-                        onClick={() => editor.chain().focus().toggleBold().run()}
-                        className={`p-1.5 rounded transition-colors ${editor.isActive('bold') ? 'bg-background shadow-sm text-text-primary' : 'text-text-muted hover:text-text-primary hover:bg-background/50'}`}
-                        title="Bold"
-                    >
-                        <Bold className="w-4 h-4" />
-                    </button>
-                    <button
-                        onClick={() => editor.chain().focus().toggleItalic().run()}
-                        className={`p-1.5 rounded transition-colors ${editor.isActive('italic') ? 'bg-background shadow-sm text-text-primary' : 'text-text-muted hover:text-text-primary hover:bg-background/50'}`}
-                        title="Italic"
-                    >
-                        <Italic className="w-4 h-4" />
-                    </button>
-                    <div className="w-[1px] h-4 bg-border mx-1" />
-                    <button
-                        onClick={setLink}
-                        className={`p-1.5 rounded transition-colors ${editor.isActive('link') ? 'bg-background shadow-sm text-accent' : 'text-text-muted hover:text-text-primary hover:bg-background/50'}`}
-                        title="Link"
-                    >
-                        <LinkIcon className="w-4 h-4" />
-                    </button>
-                </div>
-
-                <EditorContent editor={editor} />
+                <textarea
+                    value={plainText}
+                    onChange={(e) => {
+                        const newHtml = plainTextToHtml(e.target.value)
+                        updateBlock(block.id, {
+                            content: { ...content, html: newHtml }
+                        })
+                    }}
+                    className="min-h-[150px] w-full p-3 bg-background border border-border rounded-md text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-accent transition-all resize-y"
+                    placeholder="Type your text here..."
+                />
             </div>
         </div>
     )

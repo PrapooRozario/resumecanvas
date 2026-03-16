@@ -24,23 +24,18 @@ export function SocialLinksBlock({ block }: SocialLinksBlockProps) {
     return (
         <div className="w-full space-y-2">
             {links.map((link, index) => {
-                // Determine a nice display name if URL is messy
-                const displayUrl = link.url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')
-
                 return (
                     <div key={index} className="flex flex-col sm:flex-row gap-1 sm:gap-8 group">
                         <div className="sm:w-32 shrink-0 sm:pt-0.5">
-                            <p className="text-[14px] text-text-primary capitalize">{link.platform}</p>
+                            <div className="text-[14px] text-text-primary capitalize flex items-center h-full">
+                                {link.platform || <span className="text-text-muted/40">Platform</span>}
+                            </div>
                         </div>
-                        <div className="flex-1">
-                            <a
-                                href={link.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1.5 text-[14px] text-text-muted hover:text-text-primary transition-colors group-hover:text-text-primary w-fit relative after:absolute after:bottom-0 after:left-0 after:h-[1px] after:w-full after:bg-text-muted/30 hover:after:bg-text-primary"
-                            >
-                                {displayUrl} <ArrowUpRight className="w-3.5 h-3.5 opacity-50" />
-                            </a>
+                        <div className="flex-1 flex items-center h-full">
+                            <div className="inline-flex items-center gap-1.5 text-[14px] text-text-muted hover:text-text-primary transition-colors group-hover:text-text-primary w-fit relative after:absolute after:bottom-0 after:left-0 after:h-[1px] after:w-full after:bg-text-muted/30 hover:after:bg-text-primary">
+                                {link.url || <span className="text-text-muted/40">https://</span>}
+                                <ArrowUpRight className="w-3.5 h-3.5 opacity-50" />
+                            </div>
                         </div>
                     </div>
                 )

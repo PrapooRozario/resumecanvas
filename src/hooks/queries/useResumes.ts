@@ -16,6 +16,6 @@ export function useResumes(userId: string | undefined | null) {
       return data
     },
     enabled: !!userId,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 30, // 30 seconds — short enough that returning from the builder always refetches
   })
 }

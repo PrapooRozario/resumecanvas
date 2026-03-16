@@ -29,7 +29,10 @@ export function ResumeTemplate({ blocks, theme, interactive = false, isOverlay =
         switch (block.type) {
             case 'heading': {
                 const text = c.text || ''
-                const level = c.level || 1
+                // Coerce to number — Supabase JSONB can return numbers, but
+                // defensively guard against any string-typed values coming in.
+                const level = Number(c.level) || 1
+                const textAlign = (c.align === 'center' ? 'center' : 'left') as 'center' | 'left'
 
                 if (level === 1) {
                     return (
@@ -43,6 +46,7 @@ export function ResumeTemplate({ blocks, theme, interactive = false, isOverlay =
                                 margin: 0,
                                 letterSpacing: '-0.02em',
                                 paddingTop: isFloatingWithPhoto ? '12px' : 0,
+                                textAlign,
                             }}
                         >
                             {text}
@@ -52,15 +56,16 @@ export function ResumeTemplate({ blocks, theme, interactive = false, isOverlay =
 
                 if (level === 2) {
                     return (
-                        <div style={{ paddingTop: index > 0 ? '36px' : '0' }}>
+                        <div style={{ paddingTop: index > 0 ? '28px' : '0' }}>
                             <h2
                                 style={{
                                     fontFamily: "'Geist', sans-serif",
-                                    fontSize: '13px',
+                                    fontSize: '18px',
                                     fontWeight: 600,
                                     color: colors.text,
                                     margin: 0,
-                                    paddingBottom: '16px',
+                                    paddingBottom: '10px',
+                                    textAlign,
                                 }}
                             >
                                 {text}
@@ -69,15 +74,18 @@ export function ResumeTemplate({ blocks, theme, interactive = false, isOverlay =
                     )
                 }
 
-                // H3
+                // H3 — small label style
                 return (
                     <h3
                         style={{
                             fontFamily: "'Geist', sans-serif",
-                            fontSize: '14px',
-                            fontWeight: 600,
-                            color: colors.text,
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            color: colors.muted,
                             margin: 0,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.08em',
+                            textAlign,
                         }}
                     >
                         {text}
@@ -591,8 +599,8 @@ export function ResumeTemplate({ blocks, theme, interactive = false, isOverlay =
                     const isHidden = !rawContent
 
                     const blockPadding = {
-                         paddingTop: block.styles?.paddingTop ? `${block.styles.paddingTop}px` : undefined,
-                         paddingBottom: block.styles?.paddingBottom ? `${block.styles.paddingBottom}px` : undefined,
+                        paddingTop: block.styles?.paddingTop ? `${Number(block.styles.paddingTop)}px` : undefined,
+                        paddingBottom: block.styles?.paddingBottom ? `${Number(block.styles.paddingBottom)}px` : undefined,
                     }
 
                     const content = isHidden ? null : (

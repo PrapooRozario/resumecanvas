@@ -22,13 +22,13 @@ export function SkillsBlock({ block }: SkillsBlockProps) {
     }
 
     return (
-        <div className="w-full flex flex-wrap gap-2">
+        <div className="w-full flex flex-wrap gap-2 items-center">
             {skills.map((skill, index) => (
                 <span
                     key={index}
                     className="inline-flex items-center px-2.5 py-1 text-[13px] font-medium text-text-primary bg-surface border border-border rounded-md transition-colors"
                 >
-                    {skill}
+                    {skill || <span className="text-text-muted/40">Skill</span>}
                 </span>
             ))}
         </div>

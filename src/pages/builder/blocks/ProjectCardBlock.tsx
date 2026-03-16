@@ -17,23 +17,19 @@ export function ProjectCardBlock({ block }: ProjectCardBlockProps) {
 
             <div className="flex-1 space-y-2">
                 <h3 className="text-base font-semibold text-text-primary flex items-center gap-2">
-                    {title}
+                    {title || <span className="text-text-muted/40">Project Title</span>}
                 </h3>
 
-                <p className="text-[14px] text-text-secondary leading-relaxed">
-                    {description}
-                </p>
+                <div 
+                    className="text-[14px] text-text-secondary leading-relaxed w-full"
+                    dangerouslySetInnerHTML={{ __html: description || '<p class="text-text-muted/40">Describe your project...</p>' }}
+                />
 
-                {url && (
-                    <div className="pt-1">
-                        <a
-                            href={url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-[13px] font-medium text-text-muted hover:text-accent transition-colors"
-                        >
-                            View project <ArrowUpRight className="w-3.5 h-3.5" />
-                        </a>
+                {url !== undefined && (
+                    <div className="pt-1 flex items-center gap-2 text-[13px] font-medium text-text-muted">
+                        <span>Link:</span>
+                        <span className="font-mono">{url || <span className="text-text-muted/40">https://</span>}</span>
+                        {url && <ArrowUpRight className="w-3.5 h-3.5" />}
                     </div>
                 )}
             </div>

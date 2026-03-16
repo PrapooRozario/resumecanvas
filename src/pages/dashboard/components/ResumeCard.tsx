@@ -14,10 +14,18 @@ interface ResumeCardProps {
 
 export function ResumeCard({ resume, onEdit, onExport, onDelete }: ResumeCardProps) {
     const getRelativeTimeString = (dateString: string) => {
-        const date = new Date(dateString)
+        // Supabase returns UTC timestamps without a timezone designator (e.g. "2025-03-15T08:20:34").
+        // Without the 'Z' suffix, JavaScript's Date() treats it as local time — causing wrong diffs.
+        // We normalise by appending 'Z' only when no timezone info is already present.
+        const normalized =
+            dateString.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(dateString)
+                ? dateString
+                : dateString + 'Z'
+
+        const date = new Date(normalized)
         const now = new Date()
         const diffMs = now.getTime() - date.getTime()
-        
+
         const diffSecs = Math.floor(diffMs / 1000)
         const diffMins = Math.floor(diffSecs / 60)
         const diffHrs = Math.floor(diffMins / 60)
@@ -27,8 +35,8 @@ export function ResumeCard({ resume, onEdit, onExport, onDelete }: ResumeCardPro
         if (diffMins < 60) return `${diffMins} min${diffMins === 1 ? '' : 's'} ago`
         if (diffHrs < 24) return `${diffHrs} hour${diffHrs === 1 ? '' : 's'} ago`
         if (diffDays === 1) return 'Yesterday'
-        if (diffDays < 30) return `${diffDays} days ago`
-        
+        if (diffDays < 30) return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`
+
         return date.toLocaleDateString()
     }
 

@@ -14,7 +14,11 @@ export function useDeleteBlock(resumeId: string) {
         .eq('id', blockId)
         
       if (error) throw error
-      return blockId
+
+      const now = new Date().toISOString()
+      await supabase.from('resumes').update({ updated_at: now }).eq('id', resumeId)
+
+      return { blockId, now }
     },
     onMutate: async (deletedId) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.blocks(resumeId) })
@@ -35,8 +39,11 @@ export function useDeleteBlock(resumeId: string) {
         queryClient.setQueryData(queryKeys.blocks(resumeId), context.previousBlocks)
       }
     },
-    onSuccess: () => {
+    onSuccess: ({ now }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.blocks(resumeId) })
+      queryClient.setQueriesData<any[]>({ queryKey: ['resumes'] }, (list) =>
+        list?.map((r) => (r.id === resumeId ? { ...r, updated_at: now } : r))
+      )
     }
   })
 }

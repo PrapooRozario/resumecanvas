@@ -8,9 +8,6 @@ export function useUpdateBlock(resumeId: string) {
   
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Block> }) => {
-      // In a real database we wouldn't update the whole block blindly,
-      // but we match the previous Zustand auto-save logic for simplicity.
-      // If we only have content/styles/order_index, we update those.
       const { data, error } = await supabase
         .from('blocks')
         .update(updates)
@@ -19,7 +16,15 @@ export function useUpdateBlock(resumeId: string) {
         .single()
         
       if (error) throw error
-      return data
+
+      // Bump the resume's updated_at so the dashboard shows a fresh timestamp
+      const now = new Date().toISOString()
+      await supabase
+        .from('resumes')
+        .update({ updated_at: now })
+        .eq('id', resumeId)
+
+      return { data, now }
     },
     onMutate: async ({ id, updates }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.blocks(resumeId) })
@@ -40,6 +45,11 @@ export function useUpdateBlock(resumeId: string) {
         queryClient.setQueryData(queryKeys.blocks(resumeId), context.previousBlocks)
       }
     },
-    // NO onSuccess INVALIDATION as per requirements (optimistic update is sufficient)
+    onSuccess: ({ now }) => {
+      // Update to the dashboard list cache with the confirmed server timestamp
+      queryClient.setQueriesData<any[]>({ queryKey: ['resumes'] }, (list) =>
+        list?.map((r) => (r.id === resumeId ? { ...r, updated_at: now } : r))
+      )
+    },
   })
 }

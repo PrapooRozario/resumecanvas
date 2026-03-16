@@ -11,7 +11,7 @@ export function HeadingProperties({ block }: HeadingPropertiesProps) {
     const content = block.content || {}
 
     const text = content.text ?? 'Your Name'
-    const level = content.level ?? 1
+    const level = Number(content.level ?? 1)
     const align = content.align ?? 'left'
 
     const handleChange = (key: string, value: any) => {

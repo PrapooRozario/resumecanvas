@@ -6,11 +6,11 @@ interface TextBlockProps {
 
 export function TextBlock({ block }: TextBlockProps) {
     const content = block.content || {}
-    const html = content.html || '<p>Add your bio or description here...</p>'
+    const html = content.html || '<p class="text-text-muted/40">Add your bio or description here...</p>'
 
     return (
-        <div
-            className="w-full prose prose-sm max-w-none text-text-primary prose-p:leading-[1.7] prose-a:text-accent prose-a:no-underline hover:prose-a:underline font-sans"
+        <div 
+            className="text-text-primary prose-p:leading-[1.7] prose-a:text-accent prose-a:no-underline hover:prose-a:underline font-sans w-full"
             dangerouslySetInnerHTML={{ __html: html }}
         />
     )

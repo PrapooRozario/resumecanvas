@@ -14,12 +14,11 @@ export function SectionBlock({ block }: SectionBlockProps) {
             {showLabel && (
                 <div className="flex items-center gap-4 mb-4">
                     <h2 className="shrink-0 text-xs font-bold uppercase tracking-widest text-text-primary">
-                        {label}
+                        {label || <span className="text-text-muted/40">SECTION</span>}
                     </h2>
                     <div className="flex-1 h-[1px] bg-border/60" />
                 </div>
             )}
-            {/* The actual layout wrapper logic for child blocks isn't fully supported in this version, so this serves primarily as a visual section divider and header */}
         </div>
     )
 }
